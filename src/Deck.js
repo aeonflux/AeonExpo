@@ -2,6 +2,11 @@ import React, { Component } from "react";
 import { View, Animated, PanResponder, Dimensions } from "react-native";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
+//a minimum threshold to measure if movement categorize as LIKE or DISLIKE
+// 1/4 screen
+const SWIPE_THRESHOLD = 0.25 * Dimensions.get("window").width;
+// animation length in milliseconds
+const SWIPE_OUT_DURATION = 500;
 
 class Deck extends Component {
   constructor(props) {
@@ -31,14 +36,43 @@ class Deck extends Component {
       },
 
       //callback once a user stops a move/event
-      onPanResponderRelease: () => {
-        // move an element to initial position
-        this.resetPosition();
+      onPanResponderRelease: (event, gesture) => {
+        if (gesture.dx > SWIPE_THRESHOLD) {
+          this.forceSwipe("right");
+        } else if (gesture.dx < -SWIPE_THRESHOLD) {
+          this.forceSwipe("left");
+        } else {
+          // move an element to initial position
+          this.resetPosition();
+        }
       }
     });
 
     // Does not use setState
     this.state = { panResponder, position };
+  }
+
+  forceSwipe(direction) {
+    // ternary operator, shorthand expression
+    const x = direction === "right" ? SCREEN_WIDTH : -SCREEN_WIDTH;
+
+    // Linear animation, move directly
+    Animated.timing(this.state.position, {
+      toValue: { x, y: 0 },
+      // number of milliseconds
+      duration: SWIPE_OUT_DURATION
+    }).start(() => {
+      // Callback function
+      //triggered after the animation only
+      this.onSwipeComplete(direction);
+    });
+  }
+
+  onSwipeComplete(direction) {
+    const { onSwipeRight, onSwipeLeft } = this.props;
+
+    // action can trigger API calls etc.
+    direction === "right" ? onSwipeRight() : onSwipeLeft();
   }
 
   resetPosition() {
