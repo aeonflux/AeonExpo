@@ -1,5 +1,7 @@
 import React, { Component } from "react";
-import { View, Animated, PanResponder } from "react-native";
+import { View, Animated, PanResponder, Dimensions } from "react-native";
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
 
 class Deck extends Component {
   constructor(props) {
@@ -29,28 +31,62 @@ class Deck extends Component {
       },
 
       //callback once a user stops a move/event
-      onPanResponderRelease: () => {}
+      onPanResponderRelease: () => {
+        // move an element to initial position
+        this.resetPosition();
+      }
     });
 
     // Does not use setState
     this.state = { panResponder, position };
   }
+
+  resetPosition() {
+    Animated.spring(this.state.position, {
+      toValue: { x: 0, y: 0 }
+    }).start();
+  }
+
+  getCardStyle() {
+    const { position } = this.state;
+
+    // interpolation , amount of degree as compared to the size of horizontal movement
+    const rotate = position.x.interpolate({
+      // takes more distance (1.5x) to be able to rotate
+      inputRange: [-SCREEN_WIDTH * 1.5, 0, SCREEN_WIDTH * 1.5],
+      outputRange: ["120deg", "0deg", "120deg"]
+    });
+
+    return {
+      // use spread operator to take all properties from getLayout then add to transform
+      ...position.getLayout(),
+      transform: [{ rotate }]
+    };
+  }
+
   renderCards() {
-    return this.props.data.map(item => {
+    // index accesses the specific element
+    return this.props.data.map((item, index) => {
+      // first card
+      if (index === 0) {
+        return (
+          <Animated.View
+            // Reference position object then pass it to an animated view
+            // transform element
+            style={this.getCardStyle()}
+            key={item.id}
+            {...this.state.panResponder.panHandlers}
+          >
+            {this.props.renderCard(item)}
+          </Animated.View>
+        );
+      }
       return this.props.renderCard(item);
     });
   }
   render() {
     // Tie in a pan responder to a View
-    return (
-      <Animated.View
-        // Reference position object then pass it to an animated view
-        style={this.state.position.getLayout()}
-        {...this.state.panResponder.panHandlers}
-      >
-        {this.renderCards()}
-      </Animated.View>
-    );
+    return <View>{this.renderCards()}</View>;
   }
 }
 
