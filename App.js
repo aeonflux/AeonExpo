@@ -77,10 +77,25 @@ export default class App extends Component {
     );
   }
 
+  renderNoMoreCards() {
+    return (
+      <Card title="All Done">
+        <Text style={{}}>Red door has closed. No more kids.</Text>
+        <Button backgroundColor="#03A9F4" title="Open red door" />
+      </Card>
+    );
+  }
+
   render() {
     return (
       <View style={styles.container}>
-        <Deck data={DATA} renderCard={this.renderCard} />
+        <Deck
+          data={DATA}
+          renderCard={this.renderCard}
+          // declare this function as a prop
+          renderNoMoreCards={this.renderNoMoreCards}
+        />
+        {/* functions as props */}
       </View>
     );
   }
